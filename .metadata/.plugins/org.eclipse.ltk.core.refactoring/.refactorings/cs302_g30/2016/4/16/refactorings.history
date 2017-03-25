@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring accessors="true" comment="Delete 4 elements from project &apos;cs302_g30&apos;&#x0D;&#x0A;- Original project: &apos;cs302_g30&apos;&#x0D;&#x0A;- Original elements:&#x0D;&#x0A;     cs302_g30/src/audio&#x0D;&#x0A;     cs302_g30/src/gameObjects&#x0D;&#x0A;     cs302_g30/src/imageObjects&#x0D;&#x0A;     cs302_g30/src/screenState" description="Delete elements" element1="/src&lt;screenState" element2="/src&lt;imageObjects" element3="/src&lt;gameObjects" element4="/src&lt;audio" elements="4" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1460612811679" subPackages="false" version="1.0"/>
-</session>
