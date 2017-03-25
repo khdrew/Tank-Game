@@ -1,0 +1,14 @@
+package main;
+
+//TCPClient.java
+
+
+class TCPClient {
+	static Chat chatterini;
+	static Thread chatter;
+	TCP Client{
+		chatterini = new Chat();
+		chatter = new Thread(chatterini);
+		chatter.start();
+	}
+}

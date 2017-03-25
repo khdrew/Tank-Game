@@ -1,0 +1,16 @@
+package main;
+
+//TCPClient.java
+
+import java.io.*;
+import java.net.*;
+
+class TCPClient {
+	static Chat chatterini;
+	static Thread chatter;
+	public static void main(String argv[]) {
+		chatterini = new Chat();
+		chatter = new Thread(chatterini);
+		chatter.start();
+	}
+}

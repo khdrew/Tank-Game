@@ -1,0 +1,4 @@
+@import "heading.css";
+@import "paragraph.css"
+p { color : blue; }
+h { color : red; }

@@ -1,0 +1,392 @@
+package gameObjects;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.Random;
+
+import javax.imageio.ImageIO;
+
+import audio.AudioPlayer;
+import main.GameWindow;
+
+public class AITank extends GameObject {
+	
+	private static final double DSPEED = 3.0;
+	private static final double DFIRECD = 1;
+	private boolean rev, powerUped;
+	private int life, powerTime, tick, aiTick, axisTick;
+	private BufferedImage shieldImage, flare0, flare1, bullet;
+	private double fireCD;
+	private boolean ableFire;
+	private int nextX, nextY, nextAngle;
+	private int fireCount;
+	private AudioPlayer sfx;
+	private String powerString, outString;
+	private int dispTick, dispRange;
+	private boolean justDown, dispEnd, activeAI, walled;
+	private double futureTY = 0, futureTX = 0;
+	private int futureX, futureY, walledTick;
+	private ArrayList<GameObject> objectList;
+	private Tank enemy;
+	private Random rand;
+	
+	public AITank(int x, int y, String id, BufferedImage tankSprite, BufferedImage shieldImage, BufferedImage bullet, BufferedImage flare0, BufferedImage flare1, ArrayList<GameObject> objectList, AudioPlayer sfx, Tank enemy) {
+		super(x, y, id, tankSprite);
+		this.enemy = enemy;
+		this.sfx = sfx;
+		this.objectList = objectList;
+		this.shieldImage = shieldImage;
+		this.flare0 = flare0;
+		this.flare1 = flare1;
+		this.bullet = bullet;
+		init();
+	}
+
+	public void init() {
+		activeAI = true;
+		velY = 0;
+		aiTick = 0;
+		ableFire = true;
+		speed = DSPEED;
+		fireCD = DFIRECD;
+		fireCount = 0;
+		rev = false;
+		justDown = false;
+		shield = false;
+		life = 0;
+		powerTime = 0;
+		powerUped = false;
+		rand = new Random();
+		angle = 0;
+		rand = new Random();
+	}
+	
+	
+	public boolean isAbleFire(){
+		return ableFire;
+	}
+	
+	public void setAbleFire(boolean a){
+		ableFire = a;
+	}
+		
+	public void respawn(int x, int y, int angle) {
+		life = 0;
+		nextX = x;
+		nextY = y;
+		nextAngle = angle;
+		rev = true;
+		resetPower();
+		powerUped = false;
+		justDown = false;
+		dispEnd = false;
+		activeAI = false;
+		aiReset();
+	}
+	
+	public void aiReset(){
+		velY = 0;
+	}
+	
+	private boolean axis = true;
+	
+	public void aiControl(){
+		if (activeAI){
+			if (!checkShoot()){	
+				if (angle >= 0 && angle <= 3) {
+					futureTY = -Math.cos(angle * Math.PI / 8);
+					futureTX = Math.sin(angle * Math.PI / 8);
+				} else if (angle >= 4 && angle <= 7) {
+					futureTX = Math.cos((angle - 4) * Math.PI / 8);
+					futureTY = Math.sin((angle - 4) * Math.PI / 8);
+				} else if (angle >= 8 && angle <= 11) {
+					futureTY = Math.cos((angle - 8) * Math.PI / 8);
+					futureTX = -Math.sin((angle - 8) * Math.PI / 8);
+				} else if (angle >= 12 && angle <= 15) {
+					futureTX = -Math.cos((angle - 12) * Math.PI / 8);
+					futureTY = -Math.sin((angle - 12) * Math.PI / 8);
+				}
+				futureX = x + (int)( (futureTX * speed) * 2);
+				futureY = y + (int)( (futureTY * speed) * 2);
+				Tank tempTank = new Tank(futureX, futureY, "Player2", image, shieldImage, angle);
+				
+				AffineTransform at = AffineTransform.getTranslateInstance(tempTank.getX(), tempTank.getY());
+				at.rotate(Math.toRadians(angle * 22.5), tempTank.image.getWidth() / 2, tempTank.image.getHeight() / 2);
+				GeneralPath path = new GeneralPath();
+				path.append(tempTank.getBounds().getPathIterator(at), true);
+				Area a1 = new Area(path);
+				
+				boolean collided = false;
+				for (int i = 0; i < objectList.size() ; i++){
+					GameObject tempObject = objectList.get(i);
+					if (tempObject != this && (tempObject.getId() == "Wall" || tempObject.getId() == "")){
+						if (GameObjectHandler.checkCollisionOne(a1,tempObject)){
+							collided = true;
+						}
+					}
+				}
+				if (collided){
+					velY = -1;
+					walled = true;
+					walledTick = 0;
+					if (axis){
+						turnLeft();
+					}else{
+						turnRight();
+					}
+				}else{
+					velY = 1;
+					walledTick++;
+					if (walledTick > GameWindow.secToTicks(1)){
+						walled = false;
+					}
+					if (!walled){
+						if (scanEnemy() == 1){
+							turnRight();
+							velY = 0;
+						}else if(scanEnemy() == -1){
+							turnLeft();
+							velY = 0;
+						}
+					}
+				}
+			}else{
+				if (isAbleFire()){
+					setAbleFire(false);
+					sfx.play("gunShot");
+					objectList.add(new Bullet(this, "Bullet", 9, this.getId(), bulletImage, flare0, flare1));
+				}
+			}
+		}
+	}
+	
+	public boolean checkShoot(){
+		Bullet tempBullet new ()
+		
+		
+		return true;
+	}
+
+	
+	public int scanEnemy(){
+		boolean left = false;
+		boolean above = false;
+		boolean sameX = false;
+		boolean sameY = false;
+		int aimAngle = 0;
+		if (getX() + 24 > enemy.getX() && getX() + 24 < enemy.getX() + 48){
+			sameX = true;
+		}else if (getX() + 24 > enemy.getX() + 24) {
+			left = true;
+		}
+		
+		if (getY() + 24 > enemy.getY() && getY() + 24 < enemy.getY() + 48){
+			sameY = true;
+		}else if (getY() + 24 > enemy.getY() + 24 ){
+			above = true;
+		}
+		if (!sameX && !sameY){
+			if (left && !above){
+				aimAngle = 10;
+			}
+			if (left && above){
+				aimAngle = 14;
+			}
+			if (!left && !above){
+				aimAngle = 6;
+			}
+			if (!left && above){
+				aimAngle = 2;
+			}
+		}else{
+			if (sameX){
+				if (above){
+					aimAngle = 0;
+				}else{
+					aimAngle = 8;
+				}
+			}else {
+				if (left){
+					aimAngle = 12;
+				}else{
+					aimAngle = 4;
+				}
+			}
+		}
+		if (angle == aimAngle){		
+			return 0;
+		}
+		int tempAngle = angle;
+		int leftTurns = 0, rightTurns = 0;
+		while (tempAngle == aimAngle){
+			leftTurns++;
+			tempAngle--;
+			if (tempAngle <= -1){
+				tempAngle = 15;
+			}
+		}
+		tempAngle = angle;
+		while (tempAngle == aimAngle){
+			rightTurns++;
+			tempAngle++;
+			if (tempAngle >= 16){
+				tempAngle = 0;
+			}
+		}
+		if (rightTurns < leftTurns){
+			return 1;
+		}else{
+			return -1;
+		}
+		
+	}
+	
+	public void update() {
+		if (rev) {
+			life++;
+			if (life >= GameWindow.secToTicks(1)) {
+				x = nextX;
+				y = nextY;
+				angle = nextAngle;
+				rev = false;
+				ableFire = true;
+				activeAI = true;
+			}
+		} else {
+			aiTick++;
+			if (aiTick >= 1){
+				aiTick = 0;
+				aiControl();
+			}else{
+				aiReset();
+			}
+			axisTick++;
+			if (axisTick >= GameWindow.secToTicks(10)){
+				axisTick = 0;
+				axis = !axis;
+			}
+			setTempXY();
+			prevX = x;
+			prevY = y;
+			x += (int) (tempX * speed) * velY;
+			y += (int) (tempY * speed) * velY;
+
+			if (x < 0 || x > GameWindow.WIDTH - 46) {
+				x -= (int) (tempX * speed) * velY;
+			}
+			if (y < 0 || y > GameWindow.HEIGHT - 48) {
+				y -= (int) (tempY * speed) * velY;
+			}
+		}
+		
+		if (powerUped){
+			powerTime++;
+			if (powerTime >= (GameWindow.secToTicks(15.0))){
+				resetPower();
+				powerUped = false;
+				justDown = true;
+				dispTick = 0;
+				dispRange = 1;
+				dispEnd = false;
+				powerString = "Effect End...";
+			}
+		}
+		if (!ableFire){
+			fireCount++;
+			if (fireCount >= GameWindow.secToTicks(fireCD)){
+				fireCount = 0;
+				ableFire = true;
+			}
+		}
+	}
+
+	public void turnLeft() {
+		setAngle(getAngle() - 1);
+		angleCheck();
+	}
+
+	public void turnRight() {
+		setAngle(getAngle() + 1);
+		angleCheck();
+	}
+
+	public void draw(Graphics2D g) {
+		AffineTransform at = AffineTransform.getTranslateInstance(x, y);
+		at.rotate(Math.toRadians(angle * 22.5), image.getWidth() / 2, image.getHeight() / 2);
+		g.drawImage(image, at, null);
+		
+		AffineTransform at1 = AffineTransform.getTranslateInstance(x - 9, y - 9);
+		if (shield){
+			g.drawImage(shieldImage, at1, null);
+		}
+		if (powerUped || justDown){
+			dispTick++;
+			if (!dispEnd){
+				if (dispTick >= GameWindow.secToTicks(0.01)){
+					if (dispRange <= powerString.length()){
+						dispTick = 0;
+						outString = powerString.substring(0,dispRange);
+						dispRange++;
+						dispTick = 2000;
+					}
+				}
+				g.setColor(Color.WHITE);
+				g.setFont(new Font(GameWindow.FONTSTYLE, Font.BOLD, 10));
+				g.drawString(outString, x + 24, y + 65);
+			}
+			if (dispTick >= GameWindow.secToTicks(3) + 2000){
+				dispEnd = true;
+				justDown = false;
+			}
+		}
+		
+
+	}
+
+	public void powered(String s) {
+		powerUped = true;
+		resetPower();
+		if (s == "pshield"){
+			// temp
+			powerString = "Shield Up...";
+			setShield(true);
+		}else if (s == "pspeedUp"){
+			// temp
+			powerString = "Speed Up...";
+			setSpeed(DSPEED * 1.5);
+		}else if (s == "pspeedDown"){
+			// temp
+			powerString = "Speed Down...";
+			setSpeed(DSPEED * 0.5);
+		}else if (s == "pfireUp"){
+			powerString = "Fire Rate Up...";
+			fireCD = DFIRECD * 0.5;
+		}else if (s == "pfireDown"){
+			powerString = "Fire Rate Down...";
+			fireCD = fireCD * 1.5;
+		}
+		dispTick = 0;
+		dispRange = 1;
+		dispEnd = false;
+	}
+	
+	public String getPowerString(){
+		return powerString;
+	}
+	
+	public void resetPower(){
+		powerTime = 0;
+		shield = false;
+		speed = DSPEED;
+		fireCD = DFIRECD;
+		dispTick = 0;
+	}
+
+}
